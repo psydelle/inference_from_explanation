@@ -956,7 +956,7 @@ df.stat_normal_judgments = df.stat_normal_data %>%
          normal_b_con_right_1,
          condition,
          structure,
-         participant) %>% 
+         participant) %>%
   pivot_longer(cols = -c(participant, condition, structure),
                names_to = "index",
                values_to = "value") %>%
@@ -1615,6 +1615,13 @@ df.structure %>%
 
 ```{r}
 # model fit 
+
+'''
+inconsistency between bayesian and freq analysis. by participant random slope missing here.
+
+power analysis done post stats
+'''
+
 ffit_normality_selection = glm(formula = selection ~ structure * norm,
                                family = "binomial",
                                data = df.normality)
@@ -1720,10 +1727,14 @@ pwr.chisq.test(w = table_structure_selection %>%
                df = 1)
 ```
 
-#### Structure inference 
+#### Structure inference
+ 
 
 ```{r}
 # model fit 
+'''
+Why simple linear model instead of glm?
+'''
 ffit_structure_judgment = lm(formula = judgment ~ explanation * norm,
                              data = df.structure %>% 
                                select(participant,
