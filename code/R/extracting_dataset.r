@@ -3,7 +3,7 @@
 # Project: DR. NLP Replication Study
 # Working Title: Replicating Kirfel et al. (2022)
 # Authors: Sydelle de Souza & Ivan Vegner
-# Date: 2022/10/29 # nolint
+# Created: 2022/10/29 # nolint
 # R version: 4.1.3 (2022-03-10) -- "One Push-Up"
 
 #-----------------------------------------------------------------------------#
@@ -14,13 +14,21 @@
 # Journal of Experimental Psychology: General, 151(7), 1481–1501.
 # https://doi.org/10.1037/xge0001151
 
-# this file contains code for 
+# this file contains data analysis code forked from the Kirfel et al.'s (2022)
+# github repo (https://github.com/cicl-stanford/inference_from_explanation.git)
+# which contains all the materials required to reproduce their analysis.
+# the objective here is to reproduce their data wrangling process and obtain a
+# a cleaned dataset in long format that can then be used to reproduce their
+# statistical analysis.
 
 #-----------------------------------------------------------------------------#
 
 ## SET UP ---------------------------------------------------------------------
 
 ## load libraries
+# we do no need all these libraries for the dtaa wrangling, but loading them jic
+# as their code is quite messy and has unconventional dependencies
+# added the 'here' package to help set up a project-oriented workflow
 #
 library("knitr")       # for RMarkdown commands
 library("kableExtra")  # for nice tables
@@ -36,17 +44,16 @@ library("effectsize")  # for calculating effect sizes
 library("pwr")         # for power analysis
 library("patchwork")   # for figure panels
 library("tidyverse")   # for data wrangling, visualization, etc.
-
-# set the working directory and read in the data:
-getwd()
-setwd("C:/Users/psyde/Documents/Github")
+library("here")        # for setting up wd workflow
 
 #-----------------------------------------------------------------------------#
 
-## SET UP ---------------------------------------------------------------------
+## CONSTRUCTING THE DATASET ---------------------------------------------------
 
-## load libraries
-#
+## here we make small changes to the original code to set up file paths
+## everything else remains the same
+
+here()
 
 # CONJUNCTIVE STRUCTURE: STATISTICAL NORMS 
 df.stat_con_data = read.csv(file = "../../data/statistical_conjunctive.csv",
