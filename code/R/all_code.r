@@ -1,19 +1,7 @@
----
-title: "Inference from Explanation"
-author: "Lara Kirfel, Thomas Icard & Tobias Gerstenberg"
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
-output:
-  bookdown::html_document2:
-    toc: true
-    toc_depth: 4
-    toc_float: true
-    theme: cosmo
-    highlight: tango
----
 
 # Load packages 
+print("kms")
 
-```{r, message=FALSE, warning=FALSE}
 library("knitr")       # for RMarkdown commands 
 library("kableExtra")  # for nice tables
 library("janitor")     # for cleaning column names 
@@ -28,26 +16,24 @@ library("effectsize")  # for calculating effect sizes
 library("pwr")         # for power analysis
 library("patchwork")   # for figure panels
 library("tidyverse")   # for data wrangling, visualization, etc. 
-```
+library("here")
 
-```{r}
+
+
 # set ggplot theme 
 theme_set(theme_classic())
 
-# set knitr options
-opts_chunk$set(comment = "",
-               fig.show = "hold")
 
 # suppress summarise() grouping warning 
 options(dplyr.summarise.inform = F)
 
 # use effects contrast coding to interpret effects from categorical variables as main effects 
 options(contrasts = c("contr.sum", "contr.poly"))
-```
+
 
 # Functions 
 
-```{r}
+
 # function for printing out html or latex tables 
 print_table = function(data, format = "html", digits = 2){
   if(format == "html"){
@@ -65,15 +51,15 @@ print_table = function(data, format = "html", digits = 2){
             caption.placement = "top")
   }
 }
-```
+
 
 # Experiment 1: Normality inference
 
 ## Read in data 
 
-```{r}
+
 # CONJUNCTIVE STRUCTURE: STATISTICAL NORMS 
-df.stat_con_data = read.csv(file = "../../data/statistical_conjunctive.csv",
+df.stat_con_data = read.csv(here("../../data/statistical_conjunctive.csv"),
                    stringsAsFactors = F) %>% 
   filter(row_number() > 2) %>% # additional rows in qualtrics csv
   clean_names() %>% 
@@ -133,7 +119,7 @@ df.stat_con_judgments = df.stat_con_data %>%
          (conjunctive < 50), 0, 1))
 
 # CONJUNCTIVE STRUCTURE: PRESCRIPTIVE NORMS 
-df.pres_con_data = read.csv(file = "../../data/prescriptive_conjunctive.csv",
+df.pres_con_data = read.csv(here("../../data/prescriptive_conjunctive.csv"),
                    stringsAsFactors = F) %>% 
   filter(row_number() > 2) %>% # additional rows in qualtrics csv
   clean_names() %>% 
@@ -195,7 +181,7 @@ df.pres_con_judgments = df.pres_con_data %>%
          (conjunctive < 50), 0, 1))
 
 # DISJUNCTIVE STRUCTURE: STATISTICAL NORMS 
-df.stat_dis_data = read.csv(file = "../../data/statistical_disjunctive.csv",
+df.stat_dis_data = read.csv(here("../../data/statistical_disjunctive.csv"),
                    stringsAsFactors = F) %>% 
   filter(row_number() > 2) %>% # additional rows in qualtrics csv
   clean_names() %>% 
@@ -258,7 +244,7 @@ df.stat_dis_judgments = df.stat_dis_data %>%
          (disjunctive > 50), 0, 1))
 
 # DISJUNCTIVE STRUCTURE: PRESCRIPTIVE NORMS 
-df.pres_dis_data = read.csv(file = "../../data/prescriptive_disjunctive.csv",
+df.pres_dis_data = read.csv(here("../../data/prescriptive_disjunctive.csv"),
                    stringsAsFactors = F) %>% 
   filter(row_number() > 2) %>% # additional rows in qualtrics csv
   clean_names() %>% 
@@ -347,11 +333,11 @@ df.normality = df.stat_con_judgments %>%
          norm = factor(norm, levels = c("statistical", "prescriptive"))) %>% 
   select(-condition)
   
-```
+
 
 ## Demographics 
 
-```{r}
+
 df.normality.demo = df.stat_con_data %>% 
   select(feedback,
          age_1_text,
@@ -431,13 +417,13 @@ df.normality.demo %>%
 rm(list = ls()[!ls() %in% c("df.normality",
                             "df.normality.demo",
                             "print_table")])
-```
+
 
 ## Plots 
 
 ### Causal selections 
 
-```{r fig.height=6, fig.width=8, warning=F}
+
 set.seed(1)
 
 df.plot = df.normality %>% 
@@ -490,11 +476,11 @@ ggsave(filename = "../../figures/plots/normality_selections.pdf",
        plot = p.exp1.selections,
        width = 8,
        height = 6)
-```
+
 
 ### Main judgment data 
 
-```{r fig.height=6, fig.width=8}
+
 set.seed(1)
 
 df.plot = df.normality %>% 
@@ -558,11 +544,11 @@ ggsave(filename = "../../figures/plots/normality_judgments.pdf",
        plot = p.exp1.judgments,
        width = 8,
        height = 6)
-```
+
 
 ### Individual differences
 
-```{r fig.height=6, fig.width=8}
+
 set.seed(1)
 
 df.plot = df.normality %>% 
@@ -623,23 +609,23 @@ ggsave(filename = "../../figures/plots/normality_judgments_based_on_selections.p
        plot = p.exp1.individual,
        width = 8,
        height = 6)
-```
+
 
 ## Stats 
 
 ### Means and standard deviations 
 
-```{r}
+
 df.normality %>% 
   group_by(structure) %>% 
   summarize(mean = mean(judgment),
             sd = sd(judgment)) %>% 
   print_table()
-```
+
 
 ### Bayesian regression on selection data
 
-```{r}
+
 fit_normality_selection = brm(formula = selection ~ structure * norm,
                               family = "bernoulli",
                               data = df.normality %>% 
@@ -649,18 +635,18 @@ fit_normality_selection = brm(formula = selection ~ structure * norm,
                               file = "cache/fit_normality_selection")
 
 fit_normality_selection
-```
 
-Predictions on probability scale: 
 
-```{r, warning=F}
+# Predictions on probability scale: 
+
+
 fit_normality_selection %>% 
   ggpredict(terms = c("structure", "norm"))
-```
+
 
 ### Bayesian regression on judgment data
 
-```{r}
+
 fit_normality_judgment = brm(formula = judgment ~ structure * norm,
                              data = df.normality,
                              seed = 1,
@@ -668,13 +654,13 @@ fit_normality_judgment = brm(formula = judgment ~ structure * norm,
                              file = "cache/fit_normality_judgment")
 
 fit_normality_judgment
-```
+
 
 ## Tables
 
 ### Causal selections 
 
-```{r}
+
 fit_normality_selection %>% 
   gather_draws(b_Intercept, 
                b_structure1,
@@ -692,11 +678,11 @@ fit_normality_selection %>%
          term = factor(term, levels = c("intercept", "structure", "norm", "structure:norm"))) %>% 
   arrange(term) %>% 
   print_table()
-```
+
 
 ### Normality judgments 
 
-```{r}
+
 fit_normality_judgment %>% 
   gather_draws(b_Intercept, 
                b_structure1,
@@ -714,11 +700,11 @@ fit_normality_judgment %>%
          term = factor(term, levels = c("intercept", "structure", "norm", "structure:norm"))) %>% 
   arrange(term) %>% 
   print_table()
-```
+
 
 ### Relationship between selections and normality inference 
 
-```{r}
+
 df.normality %>% 
   mutate(judgment_binary = ifelse(judgment < 50, "normal", "abnormal")) %>% 
   group_by(structure, norm) %>% 
@@ -729,13 +715,13 @@ df.normality %>%
   ungroup() %>% 
   mutate(across(where(is.numeric), ~ round(.,2))) %>% 
   print_table()
-```
+
 
 # Experiment 2: Structure inference
 
 ## Read in data 
 
-```{r}
+
 # ABNORMAL EXPLANATION: STATISTICAL NORM 
 df.stat_abnormal_data = read.csv(file = "../../data/statistical_abnormal.csv",
                    stringsAsFactors = F) %>% 
@@ -1027,7 +1013,7 @@ df.pres_normal_data = read.csv(file = "../../data/prescriptive_normal.csv",
 
 # reference clip: 
 # Billy is the abnormal agent, Suzy the normal agent (recode Norm Condition 2)
-# Cojunctive Structure is at the top scale (100) (Recode Structure Condition 'ConjLeft')
+# Conjunctive Structure is at the top scale (100) (Recode Structure Condition 'ConjLeft')
 
 df.pres_normal_judgments = df.pres_normal_data %>% 
   mutate(participant = 1:n()) %>% 
@@ -1137,11 +1123,11 @@ df.structure = df.stat_abnormal_judgments %>%
   mutate(selection = factor(selection, levels = c("abnormal", "normal")),
     structure = factor(structure, levels = c("conjunctive", "disjunctive")),
          norm = factor(norm, levels = c("statistical", "prescriptive")))
-```
+
 
 ## Demographics
 
-```{r}
+
 df.structure.demo = df.stat_abnormal_data %>% 
   select(feedback,
          age_1_text,
@@ -1227,13 +1213,13 @@ rm(list = ls()[!ls() %in% c("df.normality",
                             "fit_normality_selection",
                             "fit_normality_judgment",
                             "p.exp1.selections")])
-```
+
 
 ## Plots 
 
 ### Causal selections
 
-```{r fig.height=6, fig.width=8, warning=F}
+
 set.seed(1)
 df.plot = df.structure %>% 
   mutate(selection = ifelse(selection == "abnormal", 1, 0),
@@ -1311,11 +1297,11 @@ ggsave(filename = "../../figures/plots/structure_selections.pdf",
        plot = p.exp2.selections,
        width = 8,
        height = 6)
-```
+
 
 ### Main judgment data 
 
-```{r fig.height=6, fig.width=8}
+
 set.seed(1)
 
 df.plot = df.structure %>% 
@@ -1377,11 +1363,11 @@ p.exp2.judgments = ggplot(data = df.plot,
 ggsave("../../figures/plots/structure_judgments.pdf",
        width = 8,
        height = 6)
-```
+
 
 ### Individual differences 
 
-```{r warning=F, fig.height=6, fig.width=8}
+
 set.seed(1)
 
 df.plot = df.structure %>% 
@@ -1449,13 +1435,13 @@ ggsave(filename = "../../figures/plots/structure_judgments_based_on_selections.p
        plot = p.exp2.individual,
        width = 8,
        height = 6)
-```
+
 
 ## Stats 
 
 ### Causal selections 
 
-```{r}
+
 df.structure %>% 
   count(structure, selection) %>% 
   group_by(structure) %>% 
@@ -1463,22 +1449,22 @@ df.structure %>%
   filter(selection == "abnormal") %>% 
   select(-n) %>% 
   print_table()
-```
+
 
 ### Means and standard deviations 
 
-```{r}
+
 df.structure %>% 
   group_by(explanation) %>% 
   summarize(mean = mean(judgment),
             sd = sd(judgment)) %>% 
   print_table()
-```
+
 
 
 ### Bayesian regression on selections
 
-```{r}
+
 fit_structure_selection = brm(formula = selection ~ 1 + structure * norm + (1 | participant),
                               family = "bernoulli",
                               data = df.structure,
@@ -1486,11 +1472,11 @@ fit_structure_selection = brm(formula = selection ~ 1 + structure * norm + (1 | 
                               cores = 2,
                               file = "cache/fit_structure_selection")
 fit_structure_selection
-```
+
 
 ### Bayesian regression on judgment data
 
-```{r}
+
 fit_structure_judgment = brm(formula = judgment ~ explanation * norm,
                              data = df.structure %>% 
                                select(participant, norm, explanation, judgment) %>% 
@@ -1499,13 +1485,13 @@ fit_structure_judgment = brm(formula = judgment ~ explanation * norm,
                              cores = 2,
                              file = "cache/fit_structure_judgment")
 fit_structure_judgment
-```
+
 
 ## Tables
 
 ### Causal selections 
 
-```{r}
+
 fit_structure_selection %>% 
   tidy(conf.method = "HPDinterval",
          fix.intercept = F) %>% 
@@ -1517,11 +1503,11 @@ fit_structure_selection %>%
            `upper 95% CI` = conf.high) %>% 
     select(-c(effect:group,std.error)) %>% 
   print_table()
-```
+
 
 ### Structure judgments 
 
-```{r}
+
 fit_structure_judgment %>% 
   gather_draws(b_Intercept, 
                b_explanation1,
@@ -1539,22 +1525,22 @@ fit_structure_judgment %>%
          term = factor(term, levels = c("intercept", "explanation", "norm", "explanation:norm"))) %>% 
   arrange(term) %>% 
   print_table()
-```
+
 
 ### Selection patterns
 
-```{r}
+
 df.structure %>% 
   select(participant, judgment, norm, structure, selection) %>% 
   pivot_wider(names_from = "structure",
               values_from = "selection") %>% 
   count(disjunctive, conjunctive) %>% 
   print_table()
-```
+
 
 ### Difference scores in structure inference based on causal selections 
 
-```{r}
+
 df.structure %>% 
   select(participant, explanation, judgment, norm, structure, selection) %>% 
   pivot_wider(names_from = "structure",
@@ -1573,11 +1559,11 @@ df.structure %>%
   select(-c(n_abnormal, n_normal)) %>% 
   mutate(across(where(is.numeric), ~ round(., 2))) %>% 
   print_table()
-```
+
 
 # Comparisons 
 
-```{r}
+
 # experiment 1: percentage of choosing the abnormal cause as a function of causal structure
 df.normality %>% 
   group_by(structure) %>% 
@@ -1603,7 +1589,7 @@ df.structure %>%
   summarize(judgment_mean = mean(judgment),
             judgment_sd = sd(judgment)) %>% 
   mutate(across(where(is.numeric), ~ round(., 2)))
-```
+
 
 # Appendix 
 
@@ -1613,8 +1599,9 @@ df.structure %>%
 
 #### Causal selections 
 
-```{r}
+
 # model fit 
+
 
 # inconsistency between bayesian and freq analysis. by participant random slope missing here.
 # power analysis done post stats
@@ -1636,12 +1623,12 @@ aov_normality_selection = Anova(ffit_normality_selection,
 
 aov_normality_selection %>% 
   print_table()
-```
+
 
 
 ##### Power analysis 
 
-```{r}
+
 table_normality_selection = table(df.normality$structure,
                                   df.normality$selection)
 
@@ -1651,11 +1638,11 @@ pwr.chisq.test(w = table_normality_selection %>%
                  as.numeric(),
                N = sum(table_normality_selection),
                df = 1)
-```
+
 
 #### Normality inference 
 
-```{r}
+
 # model fit 
 ffit_normality_judgment = lm(formula = judgment ~ structure * norm,
                              data = df.normality)
@@ -1672,11 +1659,11 @@ aov_normality_judgment %>%
 eta_squared(ffit_normality_judgment,
             ci = 0.95) %>% 
   print_table()
-```
+
 
 ##### Power analysis 
 
-```{r}
+
 # post-hoc power analysis 
 pwr.anova.test(k = 2,
                n = df.normality %>% 
@@ -1684,14 +1671,14 @@ pwr.anova.test(k = 2,
                  .$n %>% 
                  min(),
                f = aov_normality_judgment$`F value`[1])
-```
+
 
 
 ### Experiment 2
 
 #### Causal selections 
 
-```{r}
+
 # model fit 
 ffit_structure_selection = glmer(formula = selection ~ 1 + structure * norm + (1 | participant),
                                  family = "binomial",
@@ -1709,10 +1696,10 @@ aov_structure_selection = Anova(ffit_structure_selection,
 
 aov_structure_selection %>% 
   print_table()
-```
+
 ##### Power analysis 
 
-```{r}
+
 # post-hoc power analysis on the effect of structure on selections
 table_structure_selection = table(df.structure$structure,
                                   df.structure$selection)
@@ -1723,16 +1710,16 @@ pwr.chisq.test(w = table_structure_selection %>%
                  as.numeric(),
                N = sum(table_normality_selection),
                df = 1)
-```
+
 
 #### Structure inference
  
 
-```{r}
+
 # model fit 
-'''
-Why simple linear model instead of glm?
-'''
+
+# Why simple linear model instead of glm?
+
 ffit_structure_judgment = lm(formula = judgment ~ explanation * norm,
                              data = df.structure %>% 
                                select(participant,
@@ -1753,11 +1740,11 @@ aov_structure_judgment %>%
 eta_squared(ffit_structure_judgment,
             ci = 0.95) %>% 
   print_table()
-```
+
 
 ##### Power analysis 
 
-```{r}
+
 # post-hoc power analysis 
 pwr.anova.test(k = 2,
                n = df.structure %>% 
@@ -1767,13 +1754,13 @@ pwr.anova.test(k = 2,
                  .$n %>% 
                  min(),
                f = aov_structure_judgment$`F value`[1])
-```
+
 
 # Combined plots 
 
 ## Selections 
 
-```{r fig.height=6, fig.width=16}
+
 p.exp1.selections + p.exp2.selections + 
   plot_annotation(tag_levels = "A") & 
   theme(plot.tag = element_text(face = "bold"),
@@ -1782,11 +1769,11 @@ p.exp1.selections + p.exp2.selections +
 ggsave(filename = "../../figures/plots/selections.pdf",
        width = 16,
        height = 6)
-```
+
 
 # Session Info 
 
-```{r}
+
 sessionInfo()
-```
+
 
