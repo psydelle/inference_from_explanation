@@ -216,16 +216,25 @@ hist(df.struc$judgment) # u-shaped with zeros and ones inflated (scale 0-100)
 #  and examine the mcmc plots
 #
 
-## Experiment 1
-#
-
 pp_check(fit_normality_selection, ndraws = 1000)
 pp_check(fit_normality_judgment, ndraws = 1000)
 
 pp_check(fit_structure_selection, ndraws = 1000)
 pp_check(fit_structure_judgment, ndraws = 1000)
 
+
+prior_summary(fit_normality_selection)
 prior_summary(fit_normality_judgment)
-fit_normality_judgment
-pp_check(fit_normality_judgment)
-??pp_check
+
+prior_summary(fit_structure_selection)
+prior_summary(fit_structure_judgment)
+
+mcmc_plot(fit_normality_selection)
+mcmc_plot(fit_normality_judgment)
+
+mcmc_plot(fit_structure_selection) 
+mcmc_plot(fit_structure_judgment)
+
+
+## we found that 
+
