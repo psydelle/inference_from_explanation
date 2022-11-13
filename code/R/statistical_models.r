@@ -52,6 +52,7 @@ library("tidyverse")   # for data wrangling, visualization, etc.
 library("here")        # for setting up project-oriented workflow
 library("skimr")       # for quick descriptives
 library("xtable")      # for nicer latex tables
+library("ggpubr")      # fpr publication ready plots
 
 ## load dataset for experiment 1
 #
@@ -63,19 +64,24 @@ nrow(df.norm) # no. of observations = 154
 
 ## load dataset for experiment 2
 #
-df.structure <- read.csv(here("dfstructure.csv"))
+df.struc <- read.csv(here("dfstructure.csv"))
 
-head(df.structure)
+head(df.struc)
 
-nrow(df.structure) # no. of observations = 286
+nrow(df.struc) # no. of observations = 286
 
 ## skimming to look for missing data and get a descriptive overview
 #
 skim(df.norm) # alles ist in ordnung
 
-skim(df.struc) # kein ordnung hier! 
+skim(df.struc) # kein ordnung hier! @vanya, please check
 
 view(df.struc)
+
+### use effects contrast coding to interpret effects from categorical variables  
+#   as main effects
+#
+options(contrasts = c("contr.sum", "contr.poly"))
 
 #-----------------------------------------------------------------------------#
 
@@ -87,7 +93,6 @@ view(df.struc)
 #
 
 ### Bayesian regression on selection data
-
 
 fit_normality_selection = brm(formula = selection ~ structure * norm,
                               family = "bernoulli",
@@ -102,9 +107,6 @@ fit_normality_selection = brm(formula = selection ~ structure * norm,
 
 summary(fit_normality_selection)
 
-## CHECKPOINT: the results match
-#
-
 ## NOTE: in the above model, only half the dataset is being used (see data = )
 #  @vanya, can you look at the paper and figure out why? it's prob nothing,
 #  but worth checking
@@ -115,13 +117,14 @@ fit_normality_judgment = brm(formula = judgment ~ structure * norm,
                              data = df.norm,
                              seed = 1,
                              cores = 2,
-                             file = "cache/fit_normality_judgment_test")
+                             file = "cache/fit_normality_judgment_t")
 
 summary(fit_normality_judgment)
 
+## CHECKPOINT: the results match the tables in the paper
 
 ## generate model summaries as a latex tables
-
+#
 xtable(fixef(fit_normality_selection), 
             caption = "exp 1 regression results for selection")
 
@@ -129,23 +132,98 @@ xtable(fixef(fit_normality_judgment),
        caption = "exp 1 regression results for judgment")
 
 
+## EXPERIMENT 2: let's run the the models as is and check if the results 
+#  match the ones reported in the paper
+#
 
+### Bayesian regression on selections
+
+fit_structure_selection = brm(formula = selection ~ 1 + structure * norm 
+                              + (1 | participant), # random intercept
+                              family = "bernoulli",
+                              data = df.struc,
+                              seed = 1,
+                              cores = 2,
+                              file = "cache/fit_structure_selection")
+
+summary(fit_structure_selection)
+
+
+### Bayesian regression on judgment data
+
+
+fit_structure_judgment = brm(formula = judgment ~ explanation * norm,
+                             data = df.struc %>% 
+                               select(participant, norm, explanation, judgment) %>% 
+                               distinct(),
+                             seed = 1,
+                             cores = 2,
+                             file = "cache/fit_structure_judgment")
+
+summary(fit_structure_judgment)
+
+## NOTE: in the above model, n = 143 (see data = )
+#  @vanya, can you look at the paper and figure out why? worth checking
+#  solved. subjects provide 1 response to slidey scale and 2 for selection
+
+## CHECKPOINT: these results also match the tables in the paper
 
 #-----------------------------------------------------------------------------#
 
+## DESCRIPTIVES ---------------------------------------------------------------
+
+##  now let's get our hands dirty and look at their data. 
+#   we're going to start with visual descriptive checks, 
+#   get summaries of the priors, and perform posterior predictive checks
+#  
+
+## start by converting all char columns to factors for both experiments
+#
+
+df.norm <- as.data.frame(unclass(df.norm),  
+                       stringsAsFactors = TRUE)
+
+df.norm$selection_num <- ifelse(df.norm$selection == "normal", 0, 1)
+
+sum(df.norm$selection_num) # abnormal = 93
+nrow(df.norm) - sum(df.norm$selection_num) # normal = 61
+
+hist(df.norm$selection_num) # binary, as expected
+gghistogram(df.norm$judgment) # u-shaped with zeros and ones inflated (scale 0-100)
 
 
+df.struc <- as.data.frame(unclass(df.struc),  
+                         stringsAsFactors = TRUE)
+skim(df.struc)
 
-## EXPERIMENT 2 ---------------------------------------------------------------
 
+df.struc$selection_num <- ifelse(df.struc$selection == "normal", 0, 1)
+
+sum(df.struc$selection_num) # abnormal = 171
+nrow(df.struc) - sum(df.struc$selection_num) # normal = 115
+
+hist(df.struc$selection_num) # binary, as expected
+hist(df.struc$judgment) # u-shaped with zeros and ones inflated (scale 0-100)
+
+## CHECKPOINT: @vanya, can you check if this jives with what they report?
 
 #-----------------------------------------------------------------------------#
 
+## MODEL CHECKS ---------------------------------------------------------------
 
+## first we look at the predictive posterior distributions to see how well the 
+#  model has fit. then we look at whether the priors specified are informative, 
+#  and examine the mcmc plots
+#
 
-#  now let's get our hands dirty and look at their data. we're going to start
-#  visual descriptive checks, get summaries of the priors, and perform posterior 
-#  predictive checks
+## Experiment 1
+#
+
+pp_check(fit_normality_selection, ndraws = 1000)
+pp_check(fit_normality_judgment, ndraws = 1000)
+
+pp_check(fit_structure_selection, ndraws = 1000)
+pp_check(fit_structure_judgment, ndraws = 1000)
 
 prior_summary(fit_normality_judgment)
 fit_normality_judgment

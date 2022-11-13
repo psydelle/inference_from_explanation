@@ -697,6 +697,9 @@ fit_normality_judgment_m3
 pp_check(fit_normality_judgment_m3)
 
 df.normality$bjudgment <- df.normality$judgment/100
+gghistogram(df.normality$bjudgment, bins = 100)
+
+ggqqplot(df.normality$bjudgment)
 
 (contrasts(df.normality$structure) <- contr.sum(2)/2)
 ( contrasts(df.normality$norm) <- contr.sum(2)/2)
