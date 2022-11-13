@@ -1,7 +1,5 @@
 
 # Load packages 
-print("kms")
-
 library("knitr")       # for RMarkdown commands 
 library("kableExtra")  # for nice tables
 library("janitor")     # for cleaning column names 
@@ -16,9 +14,13 @@ library("effectsize")  # for calculating effect sizes
 library("pwr")         # for power analysis
 library("patchwork")   # for figure panels
 library("tidyverse")   # for data wrangling, visualization, etc. 
+
 library("here")
+#here("GitHub/inference_from_explanation")
 
+getwd()
 
+#setwd("C:/Users/psyde/Documents/GitHub/inference_from_explanation")
 
 # set ggplot theme 
 theme_set(theme_classic())
@@ -334,7 +336,7 @@ df.normality = df.stat_con_judgments %>%
   select(-condition)
   
 
-
+view(df.normality)
 ## Demographics 
 
 
@@ -626,17 +628,29 @@ df.normality %>%
 ### Bayesian regression on selection data
 
 
+
 fit_normality_selection = brm(formula = selection ~ structure * norm,
                               family = "bernoulli",
-                              data = df.normality %>% 
+                              data = df.normality %>%
                                 mutate(selection = ifelse(selection == "normal", 0, 1)),
                               seed = 1,
                               cores = 2,
                               file = "cache/fit_normality_selection")
 
+
 fit_normality_selection
 
 
+
+fit_normality_selection = brm(formula = selection ~ structure * norm,
+                              family = "bernoulli",
+                              data = df.normality %>%
+                                mutate(selection = ifelse(selection == "normal", 0, 1)),
+                              seed = 1,
+                              cores = 2,
+                              file = "cache/fit_normality_selection")
+
+pp_check(fit_normality_selection, ndraws=1000)
 # Predictions on probability scale: 
 
 
@@ -646,6 +660,7 @@ fit_normality_selection %>%
 
 ### Bayesian regression on judgment data
 
+densityPlot(df.normality$judgment)
 
 fit_normality_judgment = brm(formula = judgment ~ structure * norm,
                              data = df.normality,
@@ -653,7 +668,51 @@ fit_normality_judgment = brm(formula = judgment ~ structure * norm,
                              cores = 2,
                              file = "cache/fit_normality_judgment")
 
+prior_summary(fit_normality_judgment)
 fit_normality_judgment
+pp_check(fit_normality_judgment)
+
+
+fit_normality_judgment_m2 = brm(formula = judgment ~ structure * norm,
+                             data = df.normality,
+                             family = "negbinomial",
+                             seed = 1,
+                             cores = 2,
+                             file = "cache/fit_normality_judgment_m2")
+
+fit_normality_judgment_m2
+pp_check(fit_normality_judgment_m2)
+performance::check_distribution(fit_normality_judgment)
+
+
+fit_normality_judgment_m3 = brm(formula = judgment ~ structure * norm,
+                                data = df.normality,
+                                family = "zero_inflated_negbinomial",
+                                seed = 1,
+                                cores = 2,
+                                file = "cache/fit_normality_judgment_m3")
+
+fit_normality_judgment_m3
+
+pp_check(fit_normality_judgment_m3)
+
+df.normality$bjudgment <- df.normality$judgment/100
+
+(contrasts(df.normality$structure) <- contr.sum(2)/2)
+( contrasts(df.normality$norm) <- contr.sum(2)/2)
+
+fit_normality_judgment_m4 = brm(formula = bjudgment ~ structure * norm,
+                                data = df.normality,
+                                family = "zero_one_inflated_beta",
+                                seed = 1,
+                                cores = 2,
+                                file = "cache/fit_normality_judgment_m4.1")
+
+fit_normality_judgment_m4
+pp_check(fit_normality_judgment_m4, ndraws = 100)
+
+hist(df.normality$judgment)
+
 
 
 ## Tables
@@ -1473,7 +1532,12 @@ fit_structure_selection = brm(formula = selection ~ 1 + structure * norm + (1 | 
                               file = "cache/fit_structure_selection")
 fit_structure_selection
 
+pp_check(fit_structure_selection, ndraws = 100, type = "scatter_avg")
+ppc_stat(y, yrep, stat = "median") + grid_lines()
+brms::mcmc_plot(fit_structure_selection)
+brms::mcmc_plot(fit_normality_selection)
 
+vcov(fit_normality_selection)
 ### Bayesian regression on judgment data
 
 
@@ -1485,6 +1549,8 @@ fit_structure_judgment = brm(formula = judgment ~ explanation * norm,
                              cores = 2,
                              file = "cache/fit_structure_judgment")
 fit_structure_judgment
+
+pp_check(fit_structure_judgment, ndraws = 100)
 
 
 ## Tables
@@ -1610,6 +1676,43 @@ df.structure %>%
 ffit_normality_selection = glm(formula = selection ~ structure * norm,
                                family = "binomial",
                                data = df.normality)
+summary(ffit_normality_selection)
+#plot(ffit_normality_selection)
+
+
+
+
+performance::model_performance(ffit_normality_selection)
+performance::check_model(ffit_normality_selection)
+
+sjPlot::plot_model(ffit_normality_selection, type = "pred")
+
+ffit_normality_selection_null = glm(formula = selection ~ 1,
+                               family = "binomial",
+                               data = df.normality)
+summary(ffit_normality_selection_null)
+
+ffit_normality_selection_m1 = glm(formula = selection ~ structure,
+                               family = "binomial",
+                               data = df.normality)
+summary(ffit_normality_selection_m1)
+
+ffit_normality_selection_m2 = glm(formula = selection ~ norm,
+                               family = "binomial",
+                               data = df.normality)
+summary(ffit_normality_selection_m2)
+
+ffit_normality_selection_m3 = glm(formula = selection ~ structure + norm,
+                               family = "binomial",
+                               data = df.normality)
+summary(ffit_normality_selection_m3)
+
+ffit_normality_selection_m4 = glm(formula = selection ~ structure : norm,
+                               family = "binomial",
+                               data = df.normality)
+summary(ffit_normality_selection_m4)
+
+
 
 # analysis of deviance & effect size
 aov_normality_selection = Anova(ffit_normality_selection,
@@ -1646,6 +1749,8 @@ pwr.chisq.test(w = table_normality_selection %>%
 # model fit 
 ffit_normality_judgment = lm(formula = judgment ~ structure * norm,
                              data = df.normality)
+
+plot(ffit_normality_judgment)
 
 # anova 
 aov_normality_judgment = Anova(ffit_normality_judgment,
@@ -1771,9 +1876,13 @@ ggsave(filename = "../../figures/plots/selections.pdf",
        height = 6)
 
 
+write.csv(df.normality, "dfnorm.csv", row.names = F)
+
+write.csv(df.structure, "dfstructure.csv", row.names = F)
 # Session Info 
 
 
 sessionInfo()
+skimr::skim(df.structure)
 
 

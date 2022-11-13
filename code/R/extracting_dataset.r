@@ -208,7 +208,8 @@ df.stat_dis_data = read.csv(here("data/statistical_disjunctive.csv"),
   filter(row_number() > 2) %>% # additional rows in qualtrics csv
   clean_names() %>% 
   filter(!status == "Survey Preview", # exclude preview trials,
-         !ethnicity == "") # exclude people who did not make until it demographics
+         !ethnicity == "") 
+         # exclude people who did not make until it demographics
 
 # Reference clip in final test clip: dark motion block is at the top in
 # test clip (Recode condition "db")
